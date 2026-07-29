@@ -5,12 +5,20 @@
 # Ansibleが到達するための前提条件（SSH接続可能・Tailscale接続済み）を整える。
 # 冪等: 既に導入済みの項目はスキップし、複数回実行しても安全なようにする。
 #
-# 対象: AIエージェント用マシン／宅内ゲートウェイ用マシン（対象ホスト上でsudo実行する想定）
+# 対象: AIエージェント用マシン／宅内ゲートウェイ用マシン
+#       （対象ホスト上で一般ユーザーとして実行し、必要な箇所（tailscale up等）のみ
+#        内部でsudoを使う想定。$HOMEが一般ユーザーのホームである前提のため、
+#        本スクリプト自体をsudoやrootで実行してはならない）
 #
 # 前提となる環境変数:
 #   TAILSCALE_AUTHKEY   Tailscale認証キー（未設定なら`tailscale up`の対話ログインを促す）
 #
 set -euo pipefail
+
+if [[ ${EUID} -eq 0 ]]; then
+  echo "Do not run as root" >&2
+  exit 1
+fi
 
 log() {
   printf '[bootstrap] %s\n' "$1"
@@ -32,8 +40,11 @@ install_tailscale() {
 }
 
 connect_tailscale() {
-  if tailscale status >/dev/null 2>&1; then
-    log "tailscale は既に接続済み（tailscale status 成功）。接続をスキップする。"
+  # `tailscale status`は停止中(BackendState=Stopped等)でも終了コード0を返す
+  # ことがあるため、終了コードのみでは接続済みと誤判定する（QC-019）。
+  # BackendStateがRunningであることを明示的に確認する。
+  if [ "$(tailscale status --json 2>/dev/null | jq -r '.BackendState // empty')" = "Running" ]; then
+    log "tailscale は既に接続済み（BackendState=Running）。接続をスキップする。"
     return
   fi
 
@@ -46,7 +57,16 @@ connect_tailscale() {
   fi
 
   log "TAILSCALE_AUTHKEY を用いて tailscale up を実行する。"
-  sudo tailscale up --authkey="${TAILSCALE_AUTHKEY}"
+  # auth keyをコマンドライン引数として渡すと /proc/<pid>/cmdline 経由で
+  # 同一マシン上の他プロセス（ps aux等）から平文で読み取られる（QC-017）。
+  # file: 形式で一時ファイル経由に渡し、使用後は直ちに削除する。
+  local authkey_file
+  authkey_file="$(mktemp)"
+  trap 'rm -f "${authkey_file}"' EXIT
+  printf '%s' "${TAILSCALE_AUTHKEY}" > "${authkey_file}"
+  chmod 600 "${authkey_file}"
+  sudo tailscale up --auth-key="file:${authkey_file}"
+  rm -f "${authkey_file}"
 }
 
 # --- 2. SSH鍵配置の確認 ------------------------------------------------------
