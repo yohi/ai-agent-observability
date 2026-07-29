@@ -81,5 +81,5 @@ tags = ["api-key", "secret"]
 [[rules]]
 id = "generic-password"
 description = "Generic password/secret/token assignment pattern (quote optional, .env-style)"
-regex = '''(?i)(password|passwd|pwd|secret|token)[a-z0-9_]*\s*[=:]\s*['"]?[^\s'"]{8,}'''
+regex = '''(?i)(password|passwd|pwd|secret|token)(_{1,2}(file|path|value|key|env))?\s*[=:]\s*['"]?[^\s'"]{8,}'''
 tags = ["password", "secret"]
