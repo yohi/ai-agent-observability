@@ -24,6 +24,30 @@ log() {
   printf '[bootstrap] %s\n' "$1"
 }
 
+# connect_tailscale内で一時ファイルパスを保持する（EXITトラップから参照するため
+# グローバルスコープに置く。local変数だと関数を抜けた時点で可視域が失われ、
+# トラップ実行時に`set -u`で未割り当て変数エラーとなる）。
+AUTHKEY_FILE=""
+
+cleanup() {
+  [ -n "${AUTHKEY_FILE}" ] && rm -f "${AUTHKEY_FILE}"
+  return 0
+}
+trap cleanup EXIT
+
+# --- 0. jqの存在確認（Tailscale接続状態の判定に必要） -------------------------
+
+check_jq() {
+  if command -v jq >/dev/null 2>&1; then
+    return
+  fi
+
+  log "jq が見つからない。Tailscale接続状態の判定に必要である。"
+  log "  sudo apt-get update && sudo apt-get install -y jq"
+  log "導入後、本スクリプトを再実行すること。"
+  exit 1
+}
+
 # --- 1. Tailscaleのインストール確認・導入 -----------------------------------
 
 install_tailscale() {
@@ -60,13 +84,12 @@ connect_tailscale() {
   # auth keyをコマンドライン引数として渡すと /proc/<pid>/cmdline 経由で
   # 同一マシン上の他プロセス（ps aux等）から平文で読み取られる（QC-017）。
   # file: 形式で一時ファイル経由に渡し、使用後は直ちに削除する。
-  local authkey_file
-  authkey_file="$(mktemp)"
-  trap 'rm -f "${authkey_file}"' EXIT
-  printf '%s' "${TAILSCALE_AUTHKEY}" > "${authkey_file}"
-  chmod 600 "${authkey_file}"
-  sudo tailscale up --auth-key="file:${authkey_file}"
-  rm -f "${authkey_file}"
+  AUTHKEY_FILE="$(mktemp -t tailscale-authkey.XXXXXX)"
+  chmod 600 "${AUTHKEY_FILE}"
+  printf '%s' "${TAILSCALE_AUTHKEY}" > "${AUTHKEY_FILE}"
+  sudo tailscale up --auth-key="file:${AUTHKEY_FILE}"
+  rm -f "${AUTHKEY_FILE}"
+  AUTHKEY_FILE=""
 }
 
 # --- 2. SSH鍵配置の確認 ------------------------------------------------------
@@ -123,6 +146,7 @@ check_python3() {
 }
 
 main() {
+  check_jq
   install_tailscale
   connect_tailscale
   setup_ssh_key
