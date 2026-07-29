@@ -106,7 +106,7 @@ Ansibleを採用する。構成は2層とし、(1) `bootstrap.sh`によるTailsc
 | FR-017 | VictoriaMetrics起動引数-retentionPeriod=3（.envのVM_RETENTION_PERIODで可変） | monitoring/compose.yaml, monitoring/.env.example |
 | FR-018 | VM自己メトリクス（vm_data_size_bytes, vm_free_disk_space_bytes）＋node filesystem＋predict_linearによる増加率監視 | monitoring/grafana/dashboards/gateway.json, monitoring/grafana/provisioning/alerting/rules-resource.yaml |
 | FR-019 | 収集はVMからのpullのみ。AI機側はexporterとtextfileのみで監視基盤へ依存しない。push経路を作らない | docs/architecture.md, tests/acceptance/ac-019-independence.sh |
-| FR-020 | Grafana datasource provisioning（type: prometheus, uid: victoriametrics, url: http://victoriametrics:8428） | monitoring/grafana/provisioning/datasources/victoriametrics.yaml |
+| FR-020 | Grafana datasource provisioning（type: prometheus, uid: victoriametrics, url: `http://victoriametrics:8428`） | monitoring/grafana/provisioning/datasources/victoriametrics.yaml |
 | FR-021 | 概要ダッシュボード（uid: ai-obs-overview、5行構成）で11項目を1画面に配置 | monitoring/grafana/dashboards/overview.json |
 | FR-022 | AI機ダッシュボード（uid: ai-obs-ai-agent、7行構成）で20項目を配置 | monitoring/grafana/dashboards/ai-agent.json |
 | FR-023 | GW機ダッシュボード（uid: ai-obs-gateway、4行構成）で14項目を配置。**殿裁定により「VictoriaMetrics/Grafana自身のプロセスCPU/メモリ使用量」に表現修正**（本書8章OQ-001参照） | monitoring/grafana/dashboards/gateway.json |
@@ -177,23 +177,28 @@ job名は役割ベース（node/process/agent-metrics/victoriametrics/grafana）
 
 ### OQ-001に伴う追加
 
-**AC-017 Grafana自己監視**
+#### AC-017 Grafana自己監視
+
 > VictoriaMetricsがGrafanaの内部メトリクスを正常に収集し、Grafana自身のCPU使用時間、
 > メモリ使用量および稼働状態をGrafanaダッシュボード上で確認できること。
 
 ### OQ-002に伴う追加
 
-**AC-018 Discord通知**
+#### AC-018 Discord通知
+
 > 試験用アラートを発火させた際に、Discordの指定チャンネルへ通知が送信されること。
 
-**AC-019 復旧通知**
+#### AC-019 復旧通知
+
 > 発火中の試験用アラートを正常状態へ戻した際に、復旧通知がDiscordへ送信されること。
 
-**AC-020 秘密情報保護**
+#### AC-020 秘密情報保護
+
 > Discord Webhook URLがGitHubリポジトリ、Grafanaダッシュボード、ログおよびCI出力へ
 > 含まれていないこと。
 
-**AC-021 通知独立性**
+#### AC-021 通知独立性
+
 > Discord Webhookが無効または到達不能な場合でも、VictoriaMetricsによるメトリクス収集
 > およびGrafanaのダッシュボード表示が継続すること。
 

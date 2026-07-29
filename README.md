@@ -60,4 +60,3 @@ pre-commit フックとして導入する場合は、`.git/hooks/pre-commit` に
 #!/bin/sh
 gitleaks protect --staged --config .gitleaks.toml -v
 ```
-

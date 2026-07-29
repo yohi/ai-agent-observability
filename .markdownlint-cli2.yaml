@@ -1,0 +1,7 @@
+config:
+  default: true
+  # 日本語（全角文字混在）の表・本文では桁計算が崩れるため、体裁のみのルールは無効化する
+  MD013: false # line-length
+  MD060: false # table-column-style
+  # requirements.md は要件定義書の章番号を H1（# 1. 文書情報 等）で表現する既存規約のため無効化
+  MD025: false # single-title/single-h1

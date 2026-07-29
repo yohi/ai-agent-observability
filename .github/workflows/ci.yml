@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  yaml-syntax:
+    name: YAML構文検証
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate all *.yaml / *.yml files
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -path './.git' -prune -o -type f \( -name '*.yaml' -o -name '*.yml' \) -print)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No YAML files found."
+            exit 0
+          fi
+          printf '%s\n' "${files[@]}"
+          pip install --quiet pyyaml
+          python3 - "${files[@]}" <<'PYEOF'
+          import sys
+          import yaml
+
+          errors = []
+          for path in sys.argv[1:]:
+              try:
+                  with open(path, encoding="utf-8") as f:
+                      list(yaml.safe_load_all(f))
+              except yaml.YAMLError as exc:
+                  errors.append(f"{path}: {exc}")
+
+          if errors:
+              print("\n".join(errors), file=sys.stderr)
+              sys.exit(1)
+          PYEOF
+
+  compose-syntax:
+    name: Docker Compose構文検証
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate monitoring/compose.yaml (skip if not yet created)
+        run: |
+          set -euo pipefail
+          if [ -f monitoring/compose.yaml ]; then
+            docker compose -f monitoring/compose.yaml config
+          else
+            echo "monitoring/compose.yaml not found (created in Phase 3) — skipping."
+          fi
+
+  markdown-lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run markdownlint-cli2
+        run: npx --yes markdownlint-cli2 "**/*.md"
+
+  required-files:
+    name: 必須ファイル存在確認
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required files exist
+        run: |
+          set -euo pipefail
+          required=(README.md Makefile .gitignore LICENSE .editorconfig)
+          missing=()
+          for f in "${required[@]}"; do
+            [ -f "$f" ] || missing+=("$f")
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing required files:"
+            printf ' - %s\n' "${missing[@]}"
+            exit 1
+          fi
+          echo "All required files present."
