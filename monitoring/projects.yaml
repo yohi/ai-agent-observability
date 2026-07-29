@@ -1,0 +1,11 @@
+# AIエージェントのプロジェクト識別名 registry（SSOT）
+# ここに無いものは project="unregistered" へ丸められる。追加は必ずPRで。
+# 命名規約: ^[a-z0-9][a-z0-9-]{1,30}$ （小文字英数とハイフンのみ、最大31文字）
+# 上限: max_projects 件まで
+version: 1
+max_projects: 32
+projects:
+  - id: multi-agent-shogun
+    paths: ["$HOME/Downloads/multi-agent-shogun"]
+  - id: ai-agent-observability
+    paths: ["$HOME/src/ai-agent-observability"]

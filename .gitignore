@@ -1,0 +1,31 @@
+# 監視データ（永続ボリューム）— NFR-018 / §12.2
+monitoring/victoriametrics/data/
+monitoring/grafana/data/
+
+# 秘密情報 — NFR-014
+monitoring/.env
+*.retry
+
+# Ansible vault
+*.vault
+vault_pass.txt
+
+# 秘密情報 — NFR-014（ファイル名を列挙するのではなくパターンで面を塞ぐ）
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+*.p12
+id_rsa*
+id_ed25519*
+*credentials*.json
+*secret*
+*password*
+vault_pass*
+*.vault
+
+# 設計済み成果物の限定再許可（QC-005是正。*secret* の過剰ブロック解除）
+!tests/security/test_no_secrets_in_metrics.sh
+!.github/workflows/secret-scan.yml
