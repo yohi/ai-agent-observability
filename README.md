@@ -36,3 +36,28 @@ make up
 - `automation/` — Ansible構成とブートストラップ・集計スクリプト
 - `tests/` — 設定・接続・セキュリティ・受入テスト
 - `docs/` — 要件定義・設計・実装計画・運用・復旧手順
+
+## 秘密情報スキャン（gitleaks）
+
+`push`・`pull_request` 時に GitHub Actions（`.github/workflows/secret-scan.yml`）で
+[gitleaks](https://github.com/gitleaks/gitleaks) が自動実行され、SSH秘密鍵・PEM秘密鍵・
+Tailscale auth key・Discord Webhook URL等の漏洩を検出した場合CIが失敗する
+（検出ルールは `.gitleaks.toml`）。
+
+コミット前にローカルで同じ検査を実行するには、以下のいずれかを使用する。
+
+```bash
+# gitleaks CLI を直接実行する場合（https://github.com/gitleaks/gitleaks#installing）
+gitleaks detect --source . --config .gitleaks.toml --no-git -v
+
+# 全Git履歴を対象にする場合
+gitleaks detect --source . --config .gitleaks.toml -v
+```
+
+pre-commit フックとして導入する場合は、`.git/hooks/pre-commit` に以下を追加する。
+
+```bash
+#!/bin/sh
+gitleaks protect --staged --config .gitleaks.toml -v
+```
+

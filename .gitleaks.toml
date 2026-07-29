@@ -1,0 +1,62 @@
+title = "Gitleaks config for ai-agent-observability"
+
+# ============================================
+# Allowlist: 許可パターン（誤検知を防ぐ、最小限）
+# ============================================
+
+[allowlist]
+description = "Allowlist for example/template files only"
+
+paths = [
+    '''monitoring/\.env\.example''',
+    '''.*\.example\..*''',
+    '''.*\.example$''',
+]
+
+regexes = [
+    '''GF_ALERTING_DISCORD_WEBHOOK_URL=\s*$''',
+]
+
+# ============================================
+# Custom Rules: カスタム検出ルール（SEC-001完了条件5）
+# ============================================
+
+[[rules]]
+id = "ssh-private-key"
+description = "SSH/PGP private key block"
+regex = '''-----BEGIN (RSA|OPENSSH|DSA|EC|PGP) PRIVATE KEY-----'''
+tags = ["ssh", "private-key", "secret"]
+
+[[rules]]
+id = "pem-private-key-block"
+description = "Generic PEM private key block (not a public certificate)"
+regex = '''-----BEGIN PRIVATE KEY-----'''
+tags = ["pem", "private-key", "secret"]
+
+[[rules]]
+id = "tailscale-auth-key"
+description = "Tailscale auth key (tskey-)"
+regex = '''tskey-[a-zA-Z0-9\-]{20,}'''
+tags = ["tailscale", "auth-key", "secret"]
+
+[[rules]]
+id = "discord-webhook-url"
+description = "Discord Webhook URL"
+regex = '''https://discord(?:app)?\.com/api/webhooks/[0-9]+/[a-zA-Z0-9_\-]+'''
+tags = ["discord", "webhook", "secret"]
+
+# ============================================
+# Custom Rules: 補助（多agent-shogun運用実績があるAPIキー系）
+# ============================================
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key pattern (api_key = 'xxx')"
+regex = '''(?i)api[_-]?key\s*[=:]\s*['"][a-zA-Z0-9_\-\.]{20,}['"]'''
+tags = ["api-key", "secret"]
+
+[[rules]]
+id = "generic-password"
+description = "Generic password assignment pattern"
+regex = '''(?i)(password|passwd|pwd|secret)\s*[=:]\s*['"][^'"]{8,}['"]'''
+tags = ["password", "secret"]
