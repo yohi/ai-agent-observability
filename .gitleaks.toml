@@ -81,7 +81,7 @@ tags = ["anthropic", "api-key", "secret"]
 # ============================================
 
 [[rules]]
-id = "generic-api-key"
+id = "generic-api-key-assignment"
 description = "Generic API key pattern (api_key = 'xxx')"
 regex = '''(?i)api[_-]?key\s*[=:]\s*['"][a-zA-Z0-9_\-\.]{20,}['"]'''
 tags = ["api-key", "secret"]
