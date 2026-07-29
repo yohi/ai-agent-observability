@@ -8,15 +8,7 @@ useDefault = true
 # ============================================
 
 [allowlist]
-description = "Allowlist for example/template files only"
-
-paths = [
-    '''monitoring/\.env\.example''',
-]
-
-regexes = [
-    '''GF_ALERTING_DISCORD_WEBHOOK_URL=\s*$''',
-]
+description = "Allowlist for example/template files only (currently empty; reserved for future point exclusions)"
 
 # ============================================
 # Custom Rules: カスタム検出ルール（SEC-001完了条件5）
